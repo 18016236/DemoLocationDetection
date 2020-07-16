@@ -12,12 +12,19 @@ import android.widget.Button;
 import android.widget.Toast;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 
 public class MainActivity extends AppCompatActivity {
-Button btnGetLastLocation;
+Button btnGetLastLocation, btnGetLocationUpdate,btnRemoveLocationUpdate;
+LocationRequest mLocationRequest;
+LocationCallback mLocationCallback;
+    FusedLocationProviderClient client;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,7 +32,32 @@ Button btnGetLastLocation;
         setContentView(R.layout.activity_main);
 
         btnGetLastLocation = findViewById(R.id.btnGetLastLocation);
+        btnGetLocationUpdate = findViewById(R.id.btnGetLocationUpdate);
+        btnRemoveLocationUpdate = findViewById(R.id.btnRemoveLocationUpdate);
+        client = LocationServices.getFusedLocationProviderClient(MainActivity.this);
+
+
+        mLocationRequest = new LocationRequest();
+        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        mLocationRequest.setInterval(10000);
+        mLocationRequest.setFastestInterval(5000);
+        mLocationRequest.setSmallestDisplacement(100);
+        mLocationCallback = new LocationCallback();
+
        final FusedLocationProviderClient client = LocationServices.getFusedLocationProviderClient(this);
+
+
+        final LocationCallback mLocationCallback = new LocationCallback() {
+            @Override
+            public void onLocationResult(LocationResult locationResult) {
+                if (locationResult != null) {
+                    Location data = locationResult.getLastLocation();
+                    String msg = "New Loc Detected\n"+"Lat: "+ data.getLatitude()+","+"Lng: "+data.getLongitude();
+                    Toast.makeText(MainActivity.this,msg,Toast.LENGTH_SHORT).show();
+                }
+            };
+        };
+
 
         btnGetLastLocation.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -45,12 +77,28 @@ Button btnGetLastLocation;
                     }
                 });
             }
-
-
             }
-
         });
+
+        btnGetLocationUpdate.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (checkPermission() == true){
+                    client.requestLocationUpdates(mLocationRequest,mLocationCallback,null);
+                }
+            }
+        });
+
+
+        btnRemoveLocationUpdate.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                client.removeLocationUpdates(mLocationCallback);
+            }
+        });
+
     }
+
 
     private boolean checkPermission(){
         int permissionCheck_Coarse = ContextCompat.checkSelfPermission(
